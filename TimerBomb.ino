@@ -1,4 +1,11 @@
-// TimerBomb in hh:mm:ss format on LCD
+// Countdown in hh:mm:ss format on LCD
+
+/* Link 
+https://wokwi.com/arduino/projects/320920656704176724
+*/
+
+// Countdown variable in minutes
+unsigned long baseTime = 2; // Timer is set to two minutes
 
 /* Variables and constants */
 // LCD Setup
@@ -6,17 +13,22 @@
 
 LiquidCrystal lcd(12, 11, 10, 9, 8, 7);
 
-// LED Setup
-const int oneRed = 19;
-const int twoRed = 18;
-const int threeRed = 17;
-const int fourRed = 16;
-const int oneYellow = 15;
+/* LED Setup */
+// Red
+const int oneRed = 2;
+const int twoRed = 3;
+const int threeRed = 4;
+const int fourRed = 5;
+
+// Yellow
+const int oneYellow = 13;
 const int twoYellow = 14;
-const int threeYellow = 4;
-const int oneGreen = 5;
-const int twoGreen = 3;
-const int threeGreen = 2;
+const int threeYellow = 15;
+
+// Green
+const int oneGreen = 16;
+const int twoGreen = 17;
+const int threeGreen = 18;
 
 // Time Constants
 unsigned long int secondsPerMinute = 60;
@@ -28,17 +40,15 @@ unsigned long hours = 0;
 unsigned long minutes = 0;
 unsigned long seconds = 0;
 
-// Countdown variable in minutes
-unsigned long baseTime = 1;
-
 // timeLeft in seconds
 unsigned long timeLeft;
+double delta;
 
 // Buzzer utils
 int buzzerPin = 6;
 
-// Timer for the buzzer
-unsigned long buzzerTimer;
+// Total time for delta calculation
+unsigned long totalTime;
 
 // Prevent buzzer from ringing at the start
 bool firstTime = true;
@@ -106,26 +116,26 @@ void printTimeToLcd(unsigned long hours, unsigned long minutes, unsigned long se
 // Gradually light up LEDs until the time is up
 void ledManager(double percentage) {
   double precentLeft = double(1) - percentage;
-  //Serial.println(precentLeft);
-  if (precentLeft >= 0.1) {
-    digitalWrite(threeGreen, HIGH);
-  } else if (precentLeft >= 0.2) {
-    digitalWrite(twoGreen, HIGH);
-  } else if (precentLeft >= 0.3) {
-    digitalWrite(oneGreen, HIGH);
-  } else if (precentLeft >= 0.4) {
-    digitalWrite(threeYellow, HIGH);
-  } else if (precentLeft >= 0.5) {
-    digitalWrite(twoYellow, HIGH);
-  } else if (precentLeft >= 0.6) {
+  Serial.println(precentLeft);
+  if (precentLeft >= (double) 0.1) {
     digitalWrite(oneYellow, HIGH);
-  } else if (precentLeft >= 0.7) {
+  } else if (precentLeft >= (double) 0.2) {
     digitalWrite(oneRed, HIGH);
-  } else if (precentLeft >= 0.8) {
+  } else if (precentLeft >= (double) 0.3) {
+    digitalWrite(oneGreen, HIGH);
+  } else if (precentLeft >= (double) 0.4) {
+    digitalWrite(threeYellow, HIGH);
+  } else if (precentLeft >= (double) 0.5) {
+    digitalWrite(twoYellow, HIGH);
+  } else if (precentLeft >= (double) 0.6) {
+    digitalWrite(oneYellow, HIGH);
+  } else if (precentLeft >= (double) 0.7) {
+    digitalWrite(oneRed, HIGH);
+  } else if (precentLeft >= (double) 0.8) {
     digitalWrite(twoRed, HIGH);
-  } else if (precentLeft >= 0.9) {
+  } else if (precentLeft >= (double) 0.9) {
     digitalWrite(threeRed, HIGH);
-  } else if (precentLeft >= 1) {
+  } else if (precentLeft >= (double) 1) {
     digitalWrite(fourRed, HIGH);
   }
 }
@@ -145,20 +155,21 @@ void setup() {
   pinMode(oneGreen, OUTPUT);
   /* for (int jj=14; jj<19;jj++){
     pinMode(jj,OUTPUT);
-  }
+    }
     for (int ii=2; ii<6;ii++){
     pinMode(ii,OUTPUT);
-  } */
+    } */
   Serial.begin(9600);
+
 }
 
 void loop() {
   // Caculates the delta between the total time and the elapsed time in seconds
   timeLeft = minutesToSeconds(baseTime) - (millis() / 1000);
 
-  // Save the time left variable for the buzzer before changing it
+  // Save the first instance of the time left variable for the lcd before changing it
   // for convertion to hh:mm:ss
-  buzzerTimer = timeLeft;
+  totalTime = timeLeft;
   // Is the timer over?
   if (timeLeft == 0) {
     // handle the start of the timer
@@ -187,12 +198,14 @@ void loop() {
     printTimeToLcd(hours, minutes, seconds);
     lcd.setCursor(0, 1);
     lcd.print("You have: ");
-    lcd.print(buzzerTimer);
+    lcd.print(totalTime);
     lcd.print("s");
     // Set a 1 second delay
     delay(1000);
     // After one second, print the new value
     lcd.clear();
-    ledManager(double(buzzerTimer) / double(100));
+    delta = ((double) totalTime - (double) millis() / 1000) / (double) 120;
+    //delta /= totalTime;
+    ledManager(delta);
   }
 }
